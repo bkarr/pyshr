@@ -1,2 +1,2 @@
 # pyshr
-Python module for calling libshr functions
+Python package for calling libshr functions
