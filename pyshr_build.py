@@ -22,35 +22,38 @@ struct timespec {
     long tv_nsec;
 };
 
-typedef enum
-{
-    SH_OK,                  // success
-    SH_RETRY,               // retry previous
-    SH_ERR_EMPTY,           // no items on queue
-    SH_ERR_LIMIT,           // depth limit reached
-    SH_ERR_ARG,             // invalid argument
-    SH_ERR_NOMEM,           // not enough memory to satisfy request
-    SH_ERR_ACCESS,          // permission error
-    SH_ERR_EXIST,           // existence error
-    SH_ERR_STATE,           // invalid state
-    SH_ERR_PATH,            // problem with path name
-    SH_ERR_NOSUPPORT,       // required operation not supported
-    SH_ERR_SYS              // system error
-} sh_status_e;
+typedef enum                                                                     
+{                                                                                
+    SH_OK,                  // success                                           
+    SH_RETRY,               // retry previous                                    
+    SH_ERR_EMPTY,           // no items available                                
+    SH_ERR_LIMIT,           // depth limit reached                               
+    SH_ERR_ARG,             // invalid argument                                  
+    SH_ERR_NOMEM,           // not enough memory to satisfy request              
+    SH_ERR_ACCESS,          // permission error                                  
+    SH_ERR_EXIST,           // existence error                                   
+    SH_ERR_STATE,           // invalid state                                     
+    SH_ERR_PATH,            // problem with path name                            
+    SH_ERR_NOSUPPORT,       // required operation not supported                  
+    SH_ERR_SYS,             // system error                                      
+    SH_ERR_CONFLICT,        // update conflict                                   
+    SH_ERR_NO_MATCH,        // no match found for key                            
+    SH_ERR_MAX          
+} sh_status_e;   
 
 typedef struct shr_q shr_q_s;
 
-typedef enum
-{
-    SQ_EVNT_ALL = 0,        // not an event, used to simplify subscription
-    SQ_EVNT_NONE = 0,       // non-event
-    SQ_EVNT_INIT,           // first item added to queue
-    SQ_EVNT_LIMIT,          // queue limit reached
-    SQ_EVNT_TIME,           // max time limit reached
-    SQ_EVNT_LEVEL,          // depth level reached
-    SQ_EVNT_EMPTY,          // last item on queue removed
-    SQ_EVNT_NONEMPTY        // item added to empty queue
-} sq_event_e;
+typedef enum                                                                     
+{                                                                                
+    SQ_EVNT_ALL = 0,        // not an event, used to simplify subscription          
+    SQ_EVNT_NONE = 0,       // non-event                                         
+    SQ_EVNT_INIT,           // first item added to queue                         
+    SQ_EVNT_LIMIT,          // queue limit reached                               
+    SQ_EVNT_TIME,           // max time limit reached                            
+    SQ_EVNT_LEVEL,          // depth level reached                               
+    SQ_EVNT_EMPTY,          // last item on queue removed                        
+    SQ_EVNT_NONEMPTY        // item added to empty queue                         
+} sq_event_e;        
 
 typedef enum
 {
@@ -209,7 +212,7 @@ extern sq_event_e shr_q_event(
 );
 
 
-extern char *shr_q_explain(
+extern char *shr_explain(
     sh_status_e status          // status code
 );
 
