@@ -7,8 +7,8 @@ __title__ = "pyshr"
 __summary__ = 'This Python package allows access to the data structures implemented in the libshr c library.'
 __uri__ = 'https://github.com/bkarr/pyshr'
 
-__version__ = "0.2.0"
-__libshr_version__ = "0.16.4"
+__version__ = "0.3.1"
+__libshr_version__ = "0.17.2"
 
 __author__ = "Bryan Karr"
 __email__ = "bryankarr@gmail.com"
