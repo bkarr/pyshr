@@ -2,6 +2,7 @@
     Package is wrapper for the libshr C library implemented using CFFI
 """
 from __future__ import print_function
+from builtins import int
 import math
 import signal
 import sys
@@ -135,7 +136,7 @@ class SharedQueue:
         ''' checks that name matches an existing = 1 valid queue '''
         if name is None or not isinstance(name, str):
             raise ShareException('is_valid', ShareError.text[lib.SH_ERR_ARG])
-        return lib.shr_q_is_valid(name)
+        return lib.shr_q_is_valid(name.encode(encoding = 'utf-8'))
 
     def __init__(self, name, mode, size=0):
         ''' constructor for queue object
@@ -147,7 +148,7 @@ class SharedQueue:
             raise ShareException('constructor',
                                  ShareError.text[lib.SH_ERR_ARG],
                                  mode)
-        if name is None or not (isinstance(name, str) or isinstance(name, unicode)):
+        if name is None or not isinstance(name, str):
             raise ShareException('constructor',
                                  ShareError.text[lib.SH_ERR_ARG],
                                  name)
@@ -156,7 +157,7 @@ class SharedQueue:
                                  ShareError.text[lib.SH_ERR_ARG],
                                  size)
 
-        name = name.encode()
+        name = name.encode(encoding = 'utf-8')
         self.pq = ffi.new("shr_q_s *[1]")
         if lib.shr_q_is_valid(name) and size == 0:
             status = lib.shr_q_open(self.pq, name, mode)
@@ -196,8 +197,7 @@ class SharedQueue:
     def add(self, data):
         ''' add data stream to queue
         '''
-        if not isinstance(data, bytes) and not isinstance(data, str) and \
-            not isinstance(data, unicode):
+        if not isinstance(data, bytes) and not isinstance(data, str):
             raise ShareException('add', 'incompatible data type', data)
         data = data.encode()
         status = lib.shr_q_add(self.pq[0], data, len(data))
@@ -207,8 +207,7 @@ class SharedQueue:
     def add_wait(self, data):
         ''' add data stream to queue, block if full
         '''
-        if not isinstance(data, bytes) and not isinstance(data, str) and \
-            not isinstance(data, unicode):
+        if not isinstance(data, bytes) and not isinstance(data, str):
             raise ShareException('add_wait', 'incompatible data type', data)
         data = data.encode()
         status = lib.shr_q_add_wait(self.pq[0], data, len(data))
@@ -221,8 +220,7 @@ class SharedQueue:
         data - string or bytes to put on queue
         time - float of time to wait
         '''
-        if not isinstance(data, bytes) and not isinstance(data, str) and \
-            not isinstance(data, unicode):
+        if not isinstance(data, bytes) and not isinstance(data, str):
             raise ShareException('add_wait', 'incompatible data type', data)
         data = data.encode()
         ts = ffi.new('struct timespec *')
@@ -234,7 +232,7 @@ class SharedQueue:
             raise ShareException('add_timedwait', ShareError.text[status])
 
     def __to_vector(self, items, vector, vcnt, buffers):
-        for i in xrange(vcnt):
+        for i in range(vcnt):
             d_type = type(items[i])
             data = items[i]
             if d_type == tuple:
@@ -246,11 +244,6 @@ class SharedQueue:
 
             if d_type == int or (d_type == SHType.INTEGER_T and isinstance(data, int)):
                 vector[i].type = lib.SH_INTEGER_T
-                vector[i].len = 4
-                buffers.append(ffi.new("int *", data))
-                vector[i].base = buffers[i]
-            elif d_type == long or (d_type == SHType.INTEGER_T and isinstance(data, long)):
-                vector[i].type = lib.SH_INTEGER_T
                 vector[i].len = 8
                 buffers.append(ffi.new("long long *", data))
                 vector[i].base = buffers[i]
@@ -261,17 +254,18 @@ class SharedQueue:
                 vector[i].base = buffers[i]
             elif d_type == str or d_type == SHType.ASCII_T:
                 vector[i].type = lib.SH_ASCII_T
+                data = data.encode(encoding = 'utf-8')
                 vector[i].len = len(data)
                 buffers.append(ffi.new('char[]', data))
                 vector[i].base = buffers[i]
             elif d_type == SHType.XML_T:
-                if isinstance(data, unicode):
-                    data = data.encode()
+                if isinstance(data, str):
+                    data = data.encode(encoding = 'utf-8')
                 vector[i].type = lib.SH_XML_T
                 vector[i].len = len(data)
                 buffers.append(ffi.new('char[]', data))
                 vector[i].base = buffers[i]
-            elif d_type == unicode or d_type == SHType.UTF8_T:
+            elif d_type == str or d_type == SHType.UTF8_T:
                 vector[i].type = lib.SH_UTF8_T
                 data = data.encode()
                 vector[i].len = len(data)
@@ -345,7 +339,7 @@ class SharedQueue:
     def __to_list(self, item):
         #import pdb; pdb.set_trace()
         result = []
-        for i in xrange(item.vcount):
+        for i in range(item.vcount):
             d_type = item.vector[i].type
             d_base = item.vector[i].base
             d_len = item.vector[i].len
@@ -353,24 +347,22 @@ class SharedQueue:
                 if d_len == 4:
                     result.append(int(ffi.cast('int *', d_base)[0]))
                 else:
-                    result.append(long(ffi.cast('long *', d_base)[0]))
+                    result.append(int(ffi.cast('long *', d_base)[0]))
             elif d_type == lib.SH_FLOAT_T:
                 if d_len == 8:
                     result.append(float(ffi.cast('double *', d_base)[0]))
                 else:
                     raise ShareException('__to_list', 'incompatible float type')
             elif d_type == lib.SH_ASCII_T:
-                result.append(str(ffi.buffer(d_base, d_len)))
+                result.append(bytes.decode(bytes(ffi.buffer(d_base, d_len))))
             elif d_type == lib.SH_STRM_T:
                 result.append(bytes(ffi.buffer(d_base, d_len)))
             elif d_type == lib.SH_XML_T:
                 result.append((d_type, bytes(ffi.buffer(d_base, d_len))))
             elif d_type == lib.SH_UTF8_T:
-                result.append(unicode(ffi.buffer(d_base, d_len), 'utf-8'))
+                result.append(bytes.decode(bytes(ffi.buffer(d_base, d_len))))
             elif d_type == lib.SH_JSON_T:
-                result.append((d_type, unicode(ffi.buffer(d_base, d_len), 'utf-8')))
-            elif d_type == lib.SH_UTF16_T:
-                result.append(unicode(ffi.buffer(d_base, d_len), 'utf-16'))
+                result.append((d_type, bytes.decode(bytes(ffi.buffer(d_base, d_len)))))
             else:
                 raise ShareException('__to_list', 'incompatible data type')
         return result
@@ -577,6 +569,7 @@ class SharedQueue:
             raise ShareException('target_delay', ShareError.text[status])
 
 if __name__ == '__main__':
+    #import pdb;pdb.set_trace()
     try:
         if not SharedQueue.is_valid('testq'):
             print("queue doesn't exist")
